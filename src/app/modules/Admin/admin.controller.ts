@@ -7,7 +7,7 @@ const getAllAdmin = async (req: Request, res: Response) => {
     try {
 
         const filters = pick(req.query, adminFilterableFields);
-        const options = pick(req.query, ['page', 'limit']);
+        const options = pick(req.query, ['page', 'limit', 'sortOrder', 'sortBy']);
         const result = await adminServices.getAllAdminFromDB(filters, options);
         res.status(201).json({ success: true, message: 'Admin get Successfully', data: result });
     } catch (error: any) {

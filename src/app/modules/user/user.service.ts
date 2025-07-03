@@ -28,7 +28,22 @@ const createAdmin = async (data: any) => {
     return result;
 }
 
+const createUser = async (data: any) => {
+    const hashedPassword = await bcrypt.hash(data?.password, 12);
+
+    const user = await prisma.user.create({
+        data: {
+            email: data?.email,
+            password: hashedPassword,
+            role: userRole.PATIENT,
+        },
+    });
+
+    return user;
+};
+
 
 export const userServices = {
-    createAdmin
+    createAdmin,
+    createUser
 }

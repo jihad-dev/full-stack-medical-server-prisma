@@ -1,0 +1,11 @@
+import jwt from 'jsonwebtoken';
+
+// একটি reusable ফাংশন যা যেকোনো payload দিয়ে টোকেন তৈরি করে
+export const generateToken = (
+  payload: any,             // যে ডেটা টোকেনে থাকবে
+  secret: string,           // সাইন করার গোপন চাবি
+  expiresIn: string         // মেয়াদ (যেমন: "1h", "7d", "30m")
+) => {
+  const token = jwt.sign(payload, secret, { expiresIn });
+  return token;
+};

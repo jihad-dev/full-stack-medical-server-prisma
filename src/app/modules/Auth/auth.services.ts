@@ -1,8 +1,8 @@
 import { prisma } from "../../../Shared/prisma"
 import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-import { generateToken } from "../../../helpers/generateToken"
-import { decode } from "punycode"
+import { generateToken, verifyToken } from "../../../helpers/generateToken"
+import { userStatus } from "../../../generated/prisma"
+import config from "../../../config"
 
 
 const loginUser = async (payload: {
@@ -11,7 +11,8 @@ const loginUser = async (payload: {
 }) => {
     const userData = await prisma.user.findUniqueOrThrow({
         where: {
-            email: payload?.email
+            email: payload?.email,
+            status: userStatus.ACTIVE
         }
     });
     const checkingPassword = await bcrypt.compare(payload?.password, userData.password);
@@ -22,14 +23,14 @@ const loginUser = async (payload: {
 
     const accessToken = generateToken(
         { email: userData.email, role: userData.role },
-        process.env.JWT_SECRET as string,
-        '5m'
+        config.jwt_secret as string,
+        '7d'
     );
 
     // create a jwt refresh token
     const refreshToken = generateToken(
         { email: userData.email, role: userData.role },
-        process.env.JWT_REFRESH_SECRET as string,
+        config.jwt_refresh_secret as string,
         '30d'
     );
     return {
@@ -44,10 +45,7 @@ export const refreshToken = async (token: string) => {
     try {
 
         // ১. টোকেন verify করো
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_REFRESH_SECRET as string
-        ) as jwt.JwtPayload;
+        const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
         if (!decoded?.email) {
             throw new Error('Invalid token');
@@ -56,6 +54,7 @@ export const refreshToken = async (token: string) => {
         const user = await prisma.user.findUniqueOrThrow({
             where: {
                 email: decoded.email,
+                status: userStatus.ACTIVE
             },
         });
 
@@ -65,8 +64,8 @@ export const refreshToken = async (token: string) => {
         // ৩. নতুন accessToken জেনারেট করো
         const newAccessToken = generateToken(
             { email: user.email, role: user.role },
-            process.env.JWT_SECRET as string,
-            '1h'
+            config.jwt_secret as string,
+            '8h'
         );
 
         return {
@@ -74,7 +73,7 @@ export const refreshToken = async (token: string) => {
             needPasswordChange: user?.needPasswordChange
         };
     } catch (error) {
-        console.log(error)
+        throw new Error('You Are Not Authorized!!')
     }
 
 };

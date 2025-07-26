@@ -1,5 +1,5 @@
 import pick from "../../../Shared/pick";
-import sendResponse from "../../../Shared/sendResponse";
+import { sendResponse } from "../../../Shared/sendResponse";
 import { catchAsync } from "../../middlewares/catchAsync";
 import { adminFilterableFields } from "./admin.constant";
 import { adminServices } from "./admin.service";
@@ -14,7 +14,7 @@ const getAllAdmin = catchAsync(async (req: Request, res: Response) => {
         success: true,
         message: "Admins retrieved successfully",
         data: result.data,
-        meta: result.meta,
+        
     });
 
 })

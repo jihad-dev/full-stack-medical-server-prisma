@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt'
 import { generateToken, verifyToken } from "../../../helpers/generateToken"
 import { userStatus } from "../../../generated/prisma"
 import config from "../../../config"
+import { emit } from "process"
+import { Secret } from "jsonwebtoken"
 
 
 const loginUser = async (payload: {
@@ -77,8 +79,43 @@ export const refreshToken = async (token: string) => {
     }
 
 };
+const changePassword = async (user: any, payload: any) => {
+    const userData = await prisma.user.findUniqueOrThrow({
+        where: {
+            email: user?.email,
+            status: userStatus.ACTIVE
+        }
+    })
+    const isPasswordCorrect: boolean = await bcrypt.compare(payload?.oldPassword, userData?.password);
+    if (!isPasswordCorrect) {
+        throw new Error('Password Is Not Matched')
+    }
+    const hashedPassword: string = await bcrypt.hash(payload.newPassword, 12);
+    await prisma.user.update({
+        where: {
+            email: userData?.email,
 
+        },
+        data: {
+            password: hashedPassword,
+            needPasswordChange: false
+        }
+    })
+
+}
+const forgotPassword = async (payload: { email: string }) => {
+    const userData = await prisma.user.findUniqueOrThrow({
+        where: {
+            email: payload?.email,
+            status: userStatus.ACTIVE
+        }
+    });
+    const resetToken = generateToken({ email: userData.email, role: userData.role }, config.reset_password_token as Secret, config.reset_password_expires_in as string);
+    console.log(resetToken)
+}
 export const authServices = {
     loginUser,
-    refreshToken
+    refreshToken,
+    changePassword,
+    forgotPassword
 }

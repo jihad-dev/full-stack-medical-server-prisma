@@ -3,8 +3,9 @@ import bcrypt from 'bcrypt'
 import { generateToken, verifyToken } from "../../../helpers/generateToken"
 import { userStatus } from "../../../generated/prisma"
 import config from "../../../config"
-import { emit } from "process"
 import { Secret } from "jsonwebtoken"
+import emailSender from "./emailSender"
+import { log } from "console"
 
 
 const loginUser = async (payload: {
@@ -110,12 +111,58 @@ const forgotPassword = async (payload: { email: string }) => {
             status: userStatus.ACTIVE
         }
     });
-    const resetToken = generateToken({ email: userData.email, role: userData.role }, config.reset_password_token as Secret, config.reset_password_expires_in as string);
-    console.log(resetToken)
+    const resetPassToken = generateToken({ email: userData.email, role: userData.role }, config.reset_password_token as Secret, config.reset_password_expires_in as string);
+    const resetLink = config.reset_password_link + `?userId=${userData.id}&token=${resetPassToken}`;
+    await emailSender(userData?.email,
+        `<div style="font-family: Arial, sans-serif; color: #333;">
+  <p>Dear User,</p>
+  <p>
+    You requested to reset your password. Please click the link below to proceed:
+  </p>
+  <p>
+    <a href=${resetLink} 
+       style="color: #1a73e8; text-decoration: none;">
+      Reset Your Password
+    </a>
+  </p>
+  <p>
+    If you did not request this, you can safely ignore this message.
+  </p>
+  <p>Best regards,<br>Ph Medical</p>
+</div>
+`
+    )
+}
+const resetPassword = async (token: string, payload: { id: string, password: string }) => {
+    const userData = await prisma.user.findUniqueOrThrow({
+        where: {
+            id: payload.id,
+            status: userStatus.ACTIVE
+        }
+    })
+    const isTokenValid = verifyToken(token, config.reset_password_token as Secret);
+    if (!isTokenValid) {
+        throw new Error('Token Not Found!!')
+    }
+    const hashedPassword: string = await bcrypt.hash(payload.password, 12);
+    await prisma.user.update({
+        where: {
+            id: userData.id,
+            status: userStatus.ACTIVE
+
+        },
+        data: {
+            password: hashedPassword
+        }
+    })
+
+
+
 }
 export const authServices = {
     loginUser,
     refreshToken,
     changePassword,
-    forgotPassword
+    forgotPassword,
+    resetPassword
 }

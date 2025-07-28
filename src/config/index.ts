@@ -9,5 +9,8 @@ export default {
     jwt_secret: process.env.JWT_SECRET,
     reset_password_token: process.env.RESET_PASSWORD_TOKEN,
     reset_password_expires_in: process.env.RESET_PASSWORD_EXPIRES_IN,
+    reset_password_link:process.env.RESET_PASSWORD_LINK,
+    email:process.env.EMAIL,
+    app_password:process.env.APP_PASSWORD
 
 }

@@ -16,7 +16,57 @@ const createAdmin = z.object({
     }),
   }),
 });
+const createDoctor = z.object({
+  password: z.string({
+    required_error: "Password is required!",
+  }),
+
+  doctor: z.object({
+    name: z.string({
+      required_error: "Name is required!",
+    }),
+    email: z
+      .string({
+        required_error: "Email is required!",
+      })
+      .email("Invalid email format"),
+    profilePhoto: z.string().url("Invalid URL").optional(),
+    contactNumber: z.string({
+      required_error: "Contact number is required!",
+    }),
+    address: z.string({
+      required_error: "Address is required!",
+    }),
+    registrationNumber: z.string({
+      required_error: "Registration number is required!",
+    }),
+    exprience: z
+      .number()
+      .int("Experience must be an integer")
+      .nonnegative()
+      .default(0),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"], {
+      required_error: "Gender is required!",
+    }),
+    appointmentFee: z
+      .number({
+        required_error: "Appointment fee is required!",
+      })
+      .int("Fee must be an integer")
+      .nonnegative(),
+    qualification: z.string({
+      required_error: "Qualification is required!",
+    }),
+    currentWorkingPlace: z.string({
+      required_error: "Current working place is required!",
+    }),
+    designation: z.string({
+      required_error: "Designation is required!",
+    }),
+  }),
+});
 
 export const userValidation = {
   createAdmin,
+  createDoctor
 };

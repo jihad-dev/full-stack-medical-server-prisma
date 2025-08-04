@@ -5,12 +5,14 @@ import { userRole } from "../../../generated/prisma";
 
 const router = express.Router();
 
-router.post('/login', authController.loginUser);
-router.post('/refresh-token', authController.refreshToken);
-router.post('/change-password', auth(userRole.SUPER_ADMIN, userRole.ADMIN, userRole.DOCTOR, userRole.PATIENT), authController.changePassword);
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
-
-
+router.post("/login", authController.loginUser);
+router.post("/refresh-token", authController.refreshToken);
+router.post(
+  "/change-password",
+  auth(userRole.SUPER_ADMIN, userRole.ADMIN, userRole.DOCTOR, userRole.PATIENT),
+  authController.changePassword
+);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
 
 export const authRoutes = router;

@@ -2,17 +2,19 @@ import {
   Admin,
   Doctor,
   Patient,
+  Prisma,
   PrismaClient,
   userRole,
+  userStatus,
 } from "../../../generated/prisma";
 import bcrypt from "bcrypt";
 import { fileUploader } from "../../../helpers/fileUploader";
 import { IUploadFile } from "../../interfaces/file";
 import { IAdminFilterRequest, IAdminOptions } from "../Admin/admin.interface";
 import { getPaginationParams } from "../../../helpers/pagination";
-import { userSearchAbleFields } from "./user.constant";
+import { userFilterableFields, userSearchAbleFields } from "./user.constant";
 import { Request } from "express";
-import { promise } from "zod";
+
 const prisma = new PrismaClient();
 const createAdmin = async (req: Request): Promise<Admin> => {
   const file = req?.file as IUploadFile;
@@ -112,8 +114,10 @@ const getAllUserFromDB = async (
         ? options.sortOrder
         : undefined,
   });
+
   const { searchTerm, ...exactParams } = params || {};
-  // 🔍 Partial match using searchTerm
+
+  // 🔍 Search: partial match (LIKE) for name, email, contactNumber
   const searchConditions = searchTerm
     ? userSearchAbleFields.map((field) => ({
         [field]: {
@@ -123,18 +127,27 @@ const getAllUserFromDB = async (
       }))
     : [];
 
-  // ✅ Exact match using query like ?email=...&name=...
-  const exactMatchConditions = userSearchAbleFields
-    .filter((field) => exactParams?.[field as keyof typeof exactParams])
-    .map((field) => ({
-      [field]: {
-        equals: exactParams[field as keyof typeof exactParams],
-        mode: "insensitive",
-      },
-    }));
+  // ✅ Exact filters for fields like email, role, status etc.
+  const exactMatchConditions = userFilterableFields
+    .filter(
+      (field) =>
+        field !== "searchTerm" &&
+        exactParams?.[field as keyof typeof exactParams]
+    )
+    .map((field) => {
+      const value = exactParams[field as keyof typeof exactParams];
 
-  const where = {
-    // isDeleted: false, // 👈 include only not-deleted
+      // Prepare condition
+      const condition: any = {
+        equals: value,
+      };
+      return {
+        [field]: condition,
+      };
+    });
+
+  // 👇 Combined WHERE clause
+  const where: Prisma.UserWhereInput = {
     ...(searchConditions.length || exactMatchConditions.length
       ? {
           AND: [
@@ -145,6 +158,7 @@ const getAllUserFromDB = async (
       : {}),
   };
 
+  // 🗃️ Fetch users
   const result = await prisma.user.findMany({
     where,
     skip,
@@ -157,16 +171,97 @@ const getAllUserFromDB = async (
         : {
             createdAt: "desc",
           },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      needPasswordChange: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
+
+  // 🧮 Count total users
   const total = await prisma.user.count({ where });
+
   return {
-    meta: { page, limit, total },
+    meta: {
+      page,
+      limit,
+      total,
+    },
     data: result,
   };
 };
+
+const changeProfileStatus = async (
+  id: string,
+  payload: { status: userStatus }
+) => {
+  await prisma.user.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
+  const updateStatus = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      status: payload.status,
+    },
+  });
+  return updateStatus;
+};
+
+const getMyProfile = async (user: any) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user.email,
+    },
+    select: {
+      id: true,
+      email: true,
+      needPasswordChange: true,
+      role: true,
+      status: true,
+    },
+  });
+  let profileInfo;
+  if (userData.role === userRole.SUPER_ADMIN) {
+    profileInfo = await prisma.admin.findUnique({
+      where: {
+        email: userData.email,
+      },
+    });
+  } else if (userData.role === userRole.ADMIN) {
+    profileInfo = await prisma.admin.findUnique({
+      where: {
+        email: userData.email,
+      },
+    });
+  } else if (userData.role === userRole.DOCTOR) {
+    profileInfo = await prisma.doctor.findUnique({
+      where: {
+        email: userData.email,
+      },
+    });
+  } else if (userData.role === userRole.PATIENT) {
+    profileInfo = await prisma.patient.findUnique({
+      where: {
+        email: userData.email,
+      },
+    });
+  }
+  return { ...userData, ...profileInfo };
+};
+
 export const userServices = {
   createAdmin,
   createDoctor,
   createPatient,
   getAllUserFromDB,
+  changeProfileStatus,
+  getMyProfile,
 };

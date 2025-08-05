@@ -1,12 +1,17 @@
-export type IAdminFilterRequest = {
-    name?: string | undefined,
-    email?: string | undefined,
-    contactNumber?: string | undefined,
-    searchTerm?: string | undefined
+
+
+export interface IAdminFilterRequest {
+  name?: string;
+  email?: string;
+  contactNumber?: string;
+  role?: string;
+  status?: string;
+  searchTerm?: string;
 }
-export type IAdminOptions = {
-    page?: number,
-    limit?: number,
-    sortBy?: string | undefined,
-    sortOrder?: string | undefined
+
+export interface IAdminOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

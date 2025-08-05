@@ -6,6 +6,7 @@ export type IPaginationOptions = {
   sortOrder?: 'asc' | 'desc';
 };
 
+
 export const getPaginationParams = (options: IPaginationOptions) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;

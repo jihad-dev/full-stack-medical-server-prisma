@@ -58,7 +58,8 @@ const getAllAdminFromDB = async (params: IAdminFilterRequest, options: IAdminOpt
     const total = await prisma.admin.count({ where });
     return {
         meta: { page, limit, total },
-        data: result
+        data: result,
+        
     }
 
 };

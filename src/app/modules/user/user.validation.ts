@@ -30,7 +30,6 @@ const createDoctor = z.object({
         required_error: "Email is required!",
       })
       .email("Invalid email format"),
-    profilePhoto: z.string().url("Invalid URL").optional(),
     contactNumber: z.string({
       required_error: "Contact number is required!",
     }),
@@ -45,7 +44,7 @@ const createDoctor = z.object({
       .int("Experience must be an integer")
       .nonnegative()
       .default(0),
-    gender: z.enum(["MALE", "FEMALE", "OTHER"], {
+    gender: z.enum(["MALE", "FEMALE"], {
       required_error: "Gender is required!",
     }),
     appointmentFee: z
@@ -65,8 +64,36 @@ const createDoctor = z.object({
     }),
   }),
 });
+const createPatient = z.object({
+  password: z.string({
+    required_error: "Password is required!",
+  }),
 
+  patient: z.object({
+    name: z.string({
+      required_error: "Name is required!",
+    }),
+    email: z
+      .string({
+        required_error: "Email is required!",
+      })
+      .email("Invalid email format"),
+    age: z
+      .number({
+        required_error: "Age is required!",
+      })
+      .int("Age must be an integer")
+      .nonnegative("Age cannot be negative"),
+    contactNumber: z.string({
+      required_error: "Contact number is required!",
+    }),
+    address: z.string({
+      required_error: "Address is required!",
+    }),
+  }),
+});
 export const userValidation = {
   createAdmin,
-  createDoctor
+  createDoctor,
+  createPatient
 };

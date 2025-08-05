@@ -3,7 +3,7 @@ import { sendResponse } from "../../../Shared/sendResponse";
 import { catchAsync } from "../../middlewares/catchAsync";
 import { adminFilterableFields } from "./admin.constant";
 import { adminServices } from "./admin.service";
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 const getAllAdmin = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, adminFilterableFields);
@@ -13,7 +13,8 @@ const getAllAdmin = catchAsync(async (req: Request, res: Response) => {
         statusCode: 200,
         success: true,
         message: "Admins retrieved successfully",
-        data: result.data,
+        meta:result.meta,
+        data: result.data
         
     });
 

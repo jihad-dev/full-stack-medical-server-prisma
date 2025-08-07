@@ -91,6 +91,16 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user; // assuming userId is added to req.user by auth middleware
+  const result = await userServices.updateMyProfile(user, req);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User profile update successfully",
+    data: result,
+  });
+});
 
 export const userController = {
   createAdmin,
@@ -98,5 +108,6 @@ export const userController = {
   createPatient,
   getAllUser,
   changeProfileStatus,
-  getMyProfile
+  getMyProfile,
+  updateMyProfile,
 };

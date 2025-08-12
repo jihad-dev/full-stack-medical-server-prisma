@@ -4,7 +4,7 @@ import { catchAsync } from "../../middlewares/catchAsync";
 import { userFilterableFields } from "./user.constant";
 import pick from "../../../Shared/pick";
 import { sendResponse } from "../../../Shared/sendResponse";
-import { IPaginationOptions } from "../../../helpers/pagination";
+import { IAuthUser } from "./../../interfaces/common";
 
 const createAdmin = async (req: Request, res: Response, next: unknown) => {
   try {
@@ -79,28 +79,32 @@ const changeProfileStatus = catchAsync(async (req: Request, res: Response) => {
 
 // get my profile data
 
-const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user; // assuming userId is added to req.user by auth middleware
+const getMyProfile = catchAsync(
+  async (req: Request & { user?: IAuthUser | null }, res: Response) => {
+    const user = req.user as IAuthUser; 
 
-  const result = await userServices.getMyProfile(user);
+    const result = await userServices.getMyProfile(user);
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "User profile retrieved successfully",
-    data: result,
-  });
-});
-const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user; // assuming userId is added to req.user by auth middleware
-  const result = await userServices.updateMyProfile(user, req);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "User profile update successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User profile retrieved successfully",
+      data: result,
+    });
+  }
+);
+const updateMyProfile = catchAsync(
+  async (req: Request & { user?: IAuthUser | null }, res: Response) => {
+    const user = req.user; // assuming userId is added to req.user by auth middleware
+    const result = await userServices.updateMyProfile(user as IAuthUser, req);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User profile update successfully",
+      data: result,
+    });
+  }
+);
 
 export const userController = {
   createAdmin,

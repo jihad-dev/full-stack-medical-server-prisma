@@ -14,6 +14,7 @@ import { IAdminFilterRequest, IAdminOptions } from "../Admin/admin.interface";
 import { getPaginationParams } from "../../../helpers/pagination";
 import { userFilterableFields, userSearchAbleFields } from "./user.constant";
 import { Request } from "express";
+import { IAuthUser } from "../../interfaces/common";
 
 const prisma = new PrismaClient();
 const createAdmin = async (req: Request): Promise<Admin> => {
@@ -215,10 +216,10 @@ const changeProfileStatus = async (
   return updateStatus;
 };
 
-const getMyProfile = async (user: any) => {
+const getMyProfile = async (user: IAuthUser) => {
   const userData = await prisma.user.findUniqueOrThrow({
     where: {
-      email: user.email,
+      email: user?.email,
       status: userStatus.ACTIVE,
     },
     select: {
@@ -257,14 +258,14 @@ const getMyProfile = async (user: any) => {
   }
   return { ...userData, ...profileInfo };
 };
-const updateMyProfile = async (user: any, req: Request) => {
+const updateMyProfile = async (user: IAuthUser, req: Request) => {
   const userData = await prisma.user.findUniqueOrThrow({
     where: {
-      email: user.email,
+      email: user?.email ,
       status: userStatus.ACTIVE,
     },
   });
-  const file = req.file;
+  const file = req.file as IUploadFile;
   if (file) {
     const uplodedData = await fileUploader.uploadToCloudenery(file);
     req.body.profilePhoto = uplodedData?.secure_url as string;

@@ -1,14 +1,13 @@
 import jwt, { Secret } from 'jsonwebtoken';
-
 // একটি reusable ফাংশন যা যেকোনো payload দিয়ে টোকেন তৈরি করে
 export const generateToken = (
-  payload: any,             // যে ডেটা টোকেনে থাকবে
-  secret: Secret,           // সাইন করার গোপন চাবি
-  expiresIn: string         // মেয়াদ (যেমন: "1h", "7d", "30m")
-) => {
-  const token = jwt.sign(payload, secret, { expiresIn });
-  return token;
+  payload: object,                  // টোকেনে রাখা ডেটা
+  secret: string,                    // JWT secret
+  expiresIn: string | number         // মেয়াদ
+): string => {
+  return jwt.sign(payload, secret, { expiresIn });
 };
+
 
 export const verifyToken = (token: string, secret: Secret) => {
  return jwt.verify(
@@ -16,3 +15,4 @@ export const verifyToken = (token: string, secret: Secret) => {
     secret
   ) as jwt.JwtPayload;
 }
+

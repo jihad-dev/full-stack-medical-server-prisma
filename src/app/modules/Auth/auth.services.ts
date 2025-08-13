@@ -13,6 +13,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       status: userStatus.ACTIVE,
     },
   });
+
   const checkingPassword = await bcrypt.compare(
     payload?.password,
     userData.password
@@ -27,10 +28,10 @@ const loginUser = async (payload: { email: string; password: string }) => {
     config.jwt_secret as string,
     "7d"
   );
-
+ 
   // create a jwt refresh token
   const refreshToken = generateToken(
-    { email: userData.email, role: userData.role },
+    { email: userData.email, role: userData.role},
     config.jwt_refresh_secret as string,
     "30d"
   );
@@ -65,7 +66,7 @@ const refreshToken = async (token: string) => {
     }
     // ৩. নতুন accessToken জেনারেট করো
     const newAccessToken = generateToken(
-      { email: user.email, role: user.role },
+      { email: user.email, role: user.role},
       config.jwt_secret as string,
       "8h"
     );
@@ -112,7 +113,7 @@ const forgotPassword = async (payload: { email: string }) => {
   });
   const resetPassToken = generateToken(
     { email: userData.email, role: userData.role },
-    config.reset_password_token as Secret,
+    config.reset_password_token as string,
     config.reset_password_expires_in as string
   );
   const resetLink =

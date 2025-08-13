@@ -31,7 +31,7 @@ const uploadToCloudenery = (
       (error: Error, result: ICloudeneryResponse) => {
         fs.unlinkSync(file.path);
         if (error) {
-          console.error("Cloudinary Upload Error:", error);
+    
           return reject(error);
         }
         resolve(result);

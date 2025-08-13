@@ -3,15 +3,17 @@ import { prisma } from "../../../Shared/prisma";
 import { SchedulePayload } from "./schedule.interface";
 import { Prisma, Schedule } from "../../../generated/prisma";
 import { paginationHelper } from "../../../helpers/pagination";
+import { IAuthUser } from "../../interfaces/common";
+import { IScheduleFilterRequest, IScheduleOptions } from "./schedule.constant";
 
 const getAllSchedule = async (
-  params:any ,
-  options: any
+  params: IScheduleFilterRequest,
+  options: IScheduleOptions,
+  user: IAuthUser | null
 ) => {
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = params;
-  console.log(filterData);
-  
+  const { startDate, endDate, ...filterData } = params;
+
   const andCondions: Prisma.ScheduleWhereInput[] = [];
   // Exact Match
   if (Object.keys(filterData).length > 0) {
@@ -23,10 +25,44 @@ const getAllSchedule = async (
       })),
     });
   }
-  const whereConditons: Prisma.ScheduleWhereInput = { AND: andCondions };
+  // Date and Time Filtering
+  if (startDate && endDate) {
+    andCondions.push({
+      AND: [
+        {
+          startDateTime: {
+            gte: startDate,
+          },
+        },
+        {
+          endDateTime: {
+            lte: endDate,
+          },
+        },
+      ],
+    });
+  }
 
+  // doctor add schedule remove get all schedule
+
+  const doctorSchedules = await prisma.doctorSchedule.findMany({
+    where: {
+      doctor: {
+        email: user?.email,
+      },
+    },
+  });
+  const doctorScheduleIds = doctorSchedules?.map(
+    (schedule) => schedule.scheduleId
+  );
+  const whereConditons: Prisma.ScheduleWhereInput = { AND: andCondions };
   const result = await prisma.schedule.findMany({
-    where: whereConditons,
+    where: {
+      ...whereConditons,
+      id: {
+        notIn: doctorScheduleIds,
+      },
+    },
     skip,
     take: limit,
     orderBy:
@@ -40,7 +76,12 @@ const getAllSchedule = async (
   });
 
   const total = await prisma.schedule.count({
-    where: whereConditons,
+    where: {
+      ...whereConditons,
+      id: {
+        notIn: doctorScheduleIds,
+      },
+    },
   });
 
   return {
@@ -52,8 +93,6 @@ const getAllSchedule = async (
     data: result,
   };
 };
-
-
 
 const createSchedule = async (
   payload: SchedulePayload
@@ -110,5 +149,5 @@ const createSchedule = async (
 };
 export const scheduleServices = {
   createSchedule,
- getAllSchedule
+  getAllSchedule,
 };

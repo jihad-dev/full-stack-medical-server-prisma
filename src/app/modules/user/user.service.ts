@@ -11,10 +11,10 @@ import bcrypt from "bcrypt";
 import { fileUploader } from "../../../helpers/fileUploader";
 import { IUploadFile } from "../../interfaces/file";
 import { IAdminFilterRequest, IAdminOptions } from "../Admin/admin.interface";
-import { getPaginationParams } from "../../../helpers/pagination";
 import { userFilterableFields, userSearchAbleFields } from "./user.constant";
 import { Request } from "express";
 import { IAuthUser } from "../../interfaces/common";
+import { paginationHelper } from "../../../helpers/pagination";
 
 const prisma = new PrismaClient();
 const createAdmin = async (req: Request): Promise<Admin> => {
@@ -108,7 +108,7 @@ const getAllUserFromDB = async (
   params: IAdminFilterRequest,
   options: IAdminOptions
 ) => {
-  const { skip, limit, sortBy, sortOrder, page } = getPaginationParams({
+  const { skip, limit, sortBy, sortOrder, page } = paginationHelper.calculatePagination({
     ...options,
     sortOrder:
       options.sortOrder === "asc" || options.sortOrder === "desc"

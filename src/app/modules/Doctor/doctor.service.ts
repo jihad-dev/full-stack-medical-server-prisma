@@ -1,5 +1,6 @@
 import { Prisma } from "../../../generated/prisma";
-import { getPaginationParams } from "../../../helpers/pagination";
+import { paginationHelper } from "../../../helpers/pagination";
+
 import { prisma } from "../../../Shared/prisma";
 import { doctorSearchableFields } from "./doctor.constant";
 
@@ -7,7 +8,7 @@ import { doctorSearchableFields } from "./doctor.constant";
 
 const getAllDoctor = async (params: any, options: any) => {
   // 📌 Pagination + sorting
-  const { skip, limit, sortBy, sortOrder, page } = getPaginationParams({
+  const { skip, limit, sortBy, sortOrder, page } = paginationHelper.calculatePagination({
     ...options,
     sortOrder:
       options.sortOrder === "asc" || options.sortOrder === "desc"

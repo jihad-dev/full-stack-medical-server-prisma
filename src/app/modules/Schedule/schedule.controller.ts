@@ -24,7 +24,7 @@ const getAllSchedule = catchAsync(
     const result = await scheduleServices.getAllSchedule(
       filters,
       options,
-      user 
+      user
     );
     sendResponse(res, {
       statusCode: 200,
@@ -34,8 +34,32 @@ const getAllSchedule = catchAsync(
     });
   }
 );
+const getSingleschedule = catchAsync(
+  async (req: Request & { user: IAuthUser | null }, res: Response) => {
+    const result = await scheduleServices.getSingleschedule(req?.params?.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Single Schedule retrieved successfully",
+      data: result,
+    });
+  }
+);
+const deleteSchedule = catchAsync(
+  async (req: Request & { user: IAuthUser | null }, res: Response) => {
+    const result = await scheduleServices.deleteSchedule(req?.params?.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Schedule Detele successfully",
+      data: result,
+    });
+  }
+);
 
 export const scheduleController = {
   createSchedule,
   getAllSchedule,
+  getSingleschedule,
+  deleteSchedule
 };

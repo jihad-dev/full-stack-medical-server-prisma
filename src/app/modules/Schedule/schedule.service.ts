@@ -147,7 +147,29 @@ const createSchedule = async (
 
   return schedules;
 };
+
+const getSingleschedule = async (id: string): Promise<Schedule | null>  => {
+  const result = await prisma.schedule.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
+  return result;
+};
+
+const deleteSchedule = async (id: string): Promise<Schedule> => {
+    const result = await prisma.schedule.delete({
+        where: {
+            id,
+        },
+    });
+    console.log({result});
+    
+    return result;
+};
 export const scheduleServices = {
   createSchedule,
   getAllSchedule,
+  getSingleschedule,
+  deleteSchedule
 };

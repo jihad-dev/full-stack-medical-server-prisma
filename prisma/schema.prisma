@@ -58,17 +58,54 @@ model Doctor {
   user                User                 @relation(fields: [email], references: [email])
   doctorSpecialities  DoctorSpecialities[]
   doctorSchedule      DoctorSchedule[]
+  appointment         Appointment[]
+  prescription        Prescription[]
+  review              Review[]
 
   @@map("doctors")
 }
 
 model Schedule {
   id             String           @id @default(uuid())
-  startDateTime      DateTime
-  endDateTime       DateTime
+  startDateTime  DateTime
+  endDateTime    DateTime
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   doctorSchedule DoctorSchedule[]
+  appointment    Appointment?
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  patientId      String
+  doctorId       String
+  scheduleId     String            @unique
+  videoCallingId String
+  status         AppointmentStatus @default(SCHEDULED)
+  paymentStatus  PaymentStatus     @default(UNPAID)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  doctor         Doctor          @relation(fields: [doctorId], references: [id])
+  schedule       Schedule        @relation(fields: [scheduleId], references: [id])
+  doctorSchedule DoctorSchedule?
+  payment        Payment?
+  prescription   Prescription?
+  review Review?
+}
+
+model Payment {
+  id                 String        @id @default(uuid())
+  appointmentId      String        @unique
+  amount             Float
+  transactionId      String
+  status             PaymentStatus @default(UNPAID)
+  paymentGatewayData Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  appointment        Appointment   @relation(fields: [appointmentId], references: [id])
 }
 
 model DoctorSchedule {
@@ -78,8 +115,9 @@ model DoctorSchedule {
   scheduleId String
   schedule   Schedule @relation(fields: [scheduleId], references: [id])
 
-  isBooked      Boolean @default(false)
-  appointmentId String?
+  isBooked      Boolean      @default(false)
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
   @@id([doctorId, scheduleId])
 }
@@ -98,6 +136,9 @@ model Patient {
   user              User               @relation(fields: [email], references: [email])
   patientHealthData PatientHealthData?
   medicalReport     MedicalReport[]
+  appointment       Appointment[]
+  prescription      Prescription[]
+  review            Review[]
 }
 
 model Specialities {
@@ -115,6 +156,38 @@ model DoctorSpecialities {
   doctor         Doctor       @relation(fields: [doctorId], references: [id])
 
   @@id([specialitiesId, doctorId])
+}
+
+model Prescription {
+  id            String    @id @default(uuid())
+  appointmentId String    @unique
+  doctorId      String
+  patientId     String
+  instructions  String
+  followUpDate  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  patientId     String
+  doctorId      String
+  appointmentId String   @unique
+  rating        Float
+  comment       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
 }
 
 model PatientHealthData {
@@ -188,4 +261,16 @@ enum userStatus {
 enum gender {
   MALE
   FEMALE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
 }

@@ -4,6 +4,7 @@ import { catchAsync } from "../../middlewares/catchAsync";
 import { doctorScheduleServices } from "./doctorSchedule.services";
 import { IAuthUser } from "../../interfaces/common";
 import pick from "../../../Shared/pick";
+import { scheduleFilterableFields } from "./doctorSchedule.constant";
 
 const createDoctorSchedule = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
@@ -20,9 +21,21 @@ const createDoctorSchedule = catchAsync(
     });
   }
 );
+const getAllDoctorSchedule = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, scheduleFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await doctorScheduleServices.getAllDoctorSchedule(filters, options);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Doctor Schedule retrieval successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 const getMySchedule = catchAsync(
   async (req: Request & { user: IAuthUser | null }, res: Response) => {
-    const filters = pick(req.query, ['startDate','endDate','isBooked']);
+    const filters = pick(req.query, ["startDate", "endDate", "isBooked"]);
     const options = pick(req.query, ["page", "limit", "sortOrder", "sortBy"]);
     const user = req?.user;
     const result = await doctorScheduleServices.getMySchedule(
@@ -38,7 +51,22 @@ const getMySchedule = catchAsync(
     });
   }
 );
+const deleteDoctorSchedule = catchAsync(
+  async (req: Request & { user: IAuthUser | null }, res: Response) => {
+    const { id } = req?.params;
+    const user = req?.user as IAuthUser;
+    const result = await doctorScheduleServices.deleteDoctorSchedule(id, user);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "My Schedule retrieved successfully",
+      data: result,
+    });
+  }
+);
 export const doctorScheduleController = {
   createDoctorSchedule,
-  getMySchedule
+  getMySchedule,
+  deleteDoctorSchedule,
+  getAllDoctorSchedule
 };

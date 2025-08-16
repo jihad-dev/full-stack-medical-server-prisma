@@ -2,14 +2,19 @@ import { Request, Response } from "express";
 import { sendResponse } from "../../../Shared/sendResponse";
 import { catchAsync } from "../../middlewares/catchAsync";
 import { patientServices } from "./patient.service";
+import pick from "../../../Shared/pick";
+import { patientFilterableFields } from "./patient.constant";
 
 const getAllPatient = catchAsync(async (req: Request, res: Response) => {
-  const result = await patientServices.getAllPatient();
+  const filters = pick(req.query, patientFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await patientServices.getAllPatient(filters, options);
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: "Patient Data Get successfully",
-    data: result,
+    message: "Patient retrieval successfully",
+    meta: result.meta,
+    data: result.data,
   });
 });
 const getSinglePatient = catchAsync(async (req: Request, res: Response) => {
@@ -58,5 +63,5 @@ export const patientController = {
   getSinglePatient,
   updatePatientInfo,
   SoftDeletePatient,
-  HardDeletePatient
+  HardDeletePatient,
 };

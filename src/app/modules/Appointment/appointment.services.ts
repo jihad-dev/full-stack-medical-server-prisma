@@ -3,7 +3,13 @@ import { IAuthUser } from "../../interfaces/common";
 import { v4 as uuidv4 } from "uuid";
 import { appointmentSchema } from "./appointment.validation";
 import { paginationHelper } from "../../../helpers/pagination";
-import { Prisma, userRole } from "../../../generated/prisma";
+import {
+  AppointmentStatus,
+  PaymentStatus,
+  Prisma,
+  userRole,
+} from "../../../generated/prisma";
+import AppError from "../../errors/AppError";
 
 const createAppointment = async (user: IAuthUser | null, payload: any) => {
   if (!user?.email) throw new Error("User not authenticated");
@@ -148,12 +154,7 @@ const getMyAppointment = async (
     data: result,
   };
 };
-const getAllAppointment = async (
-  filters: any,
-  options: any
-) => {
- 
-
+const getAllAppointment = async (filters: any, options: any) => {
   // pagination সেট করা
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { ...filterData } = filters;
@@ -183,12 +184,11 @@ const getAllAppointment = async (
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
         : { createdAt: "desc" },
-        include:{
-          doctor:true,
-          patient:true,
-          schedule:true,
-          
-        }
+    include: {
+      doctor: true,
+      patient: true,
+      schedule: true,
+    },
   });
 
   // মোট সংখ্যা নেওয়া
@@ -207,8 +207,90 @@ const getAllAppointment = async (
   };
 };
 
+const changeAppointmentStatus = async (
+  appointmentId: string,
+  status: AppointmentStatus,
+  user: IAuthUser
+) => {
+  const appointmentData = await prisma.appointment.findUniqueOrThrow({
+    where: {
+      id: appointmentId,
+    },
+    include: {
+      doctor: true,
+    },
+  });
+
+  if (user?.role === userRole.DOCTOR) {
+    if (!(user.email === appointmentData.doctor.email)) {
+      throw new AppError(403, "This is not your appointment!");
+    }
+  }
+
+  const result = await prisma.appointment.update({
+    where: {
+      id: appointmentId,
+    },
+    data: {
+      status,
+    },
+  });
+
+  return result;
+};
+
+const cancelUnpaidAppointments = async () => {
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+  const cancelAppointment = await prisma.appointment.findMany({
+    where: {
+      createdAt: {
+
+        lte: thirtyMinAgo,
+      },
+      paymentStatus: PaymentStatus.UNPAID,
+    },
+  });
+  const unpaidAppointments = cancelAppointment.map(
+    (appointment) => appointment.id
+  );
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.deleteMany({
+      where: {
+        appointmentId: {
+          in: unpaidAppointments,
+        },
+      },
+    });
+
+    // delete unpaid appointments
+    await tx.appointment.deleteMany({
+      where: {
+        id: {
+          in: unpaidAppointments,
+        },
+      },
+    });
+    // update doctorSchedule Status : False
+    for (const unpaidAppointment of cancelAppointment) {
+      await tx.doctorSchedule.updateMany({
+        where: {
+          doctorId: unpaidAppointment.doctorId,
+          scheduleId: unpaidAppointment.scheduleId,
+        },
+        data: {
+          isBooked: false,
+        },
+      });
+    }
+  });
+  
+};
+
 export const appointmentServices = {
   createAppointment,
   getMyAppointment,
   getAllAppointment,
+  changeAppointmentStatus,
+  cancelUnpaidAppointments,
 };

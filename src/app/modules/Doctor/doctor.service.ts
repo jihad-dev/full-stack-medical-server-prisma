@@ -1,105 +1,93 @@
 import { Prisma } from "../../../generated/prisma";
 import { paginationHelper } from "../../../helpers/pagination";
-
 import { prisma } from "../../../Shared/prisma";
 import { doctorSearchableFields } from "./doctor.constant";
-
 // find All Doctor Info
+const getAllDoctor = async (
+  filters: any,
+  options: any
+) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, specialties, ...filterData } = filters;
 
-const getAllDoctor = async (params: any, options: any) => {
-  // 📌 Pagination + sorting
-  const { skip, limit, sortBy, sortOrder, page } = paginationHelper.calculatePagination({
-    ...options,
-    sortOrder:
-      options.sortOrder === "asc" || options.sortOrder === "desc"
-        ? options.sortOrder
-        : undefined,
-  });
+  const andConditions: Prisma.DoctorWhereInput[] = [];
 
-  const { searchTerm, specialties, ...exactParams } = params || {};
-  
-  // 🔍 Partial search conditions
-  const searchConditions =
-    searchTerm && searchTerm.trim() !== ""
-      ? doctorSearchableFields.map((field: string) => ({
-          [field]: {
-            contains: searchTerm,
-            mode: "insensitive" as const,
-          },
-        }))
-      : [];
+  if (searchTerm) {
+    andConditions.push({
+      OR: doctorSearchableFields.map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
 
-  // 🎯 Exact match conditions
-  const exactMatchConditions = doctorSearchableFields
-    .filter((field) => exactParams?.[field as keyof typeof exactParams])
-    .map((field) => ({
-      [field]: {
-        equals: exactParams[field as keyof typeof exactParams],
-        mode: "insensitive" as const,
-      },
-    }));
+  // doctor > doctorSpecialties > specialties -> title
 
-  // 🛠 Specialties filter condition
-  let specialtiesCondition: Prisma.DoctorWhereInput = {};
-  if (specialties && (Array.isArray(specialties) ? specialties.length : true)) {
-    specialtiesCondition = {
+  if (specialties && specialties.length > 0) {
+    andConditions.push({
       doctorSpecialities: {
         some: {
           specialities: {
-            title: Array.isArray(specialties)
-              ? {
-                  in: specialties,
-                  mode: "insensitive" as const,
-                }
-              : {
-                  equals: specialties,
-                  mode: "insensitive" as const,
-                },
+            title: {
+              contains: specialties,
+              mode: "insensitive",
+            },
           },
         },
       },
-    };
+    });
   }
 
-  // 🛠 Final where condition
-  const where: Prisma.DoctorWhereInput = {
-    isDeleted: false,
-    ...(searchConditions.length ||
-    exactMatchConditions.length ||
-    Object.keys(specialtiesCondition).length
-      ? {
-          AND: [
-            ...exactMatchConditions,
-            ...(searchConditions.length ? [{ OR: searchConditions }] : []),
-            ...(Object.keys(specialtiesCondition).length
-              ? [specialtiesCondition]
-              : []),
-          ],
-        }
-      : {}),
-  };
+  if (Object.keys(filterData).length > 0) {
+    const filterConditions = Object.keys(filterData).map((key) => ({
+      [key]: {
+        equals: (filterData as any)[key],
+      },
+    }));
+    andConditions.push(...filterConditions);
+  }
 
-  // 📥 Query with relations
+  andConditions.push({
+    isDeleted: false,
+  });
+
+  const whereConditions: Prisma.DoctorWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
   const result = await prisma.doctor.findMany({
-    where,
+    where: whereConditions,
     skip,
     take: limit,
     orderBy:
-      sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : { createdAt: "desc" },
     include: {
       doctorSpecialities: {
         include: {
           specialities: true,
-          
+        },
+      },
+      review: {
+        select: {
+          rating: true,
         },
       },
     },
   });
 
-  const total = await prisma.doctor.count({ where });
+  const total = await prisma.doctor.count({
+    where: whereConditions,
+  });
 
   return {
-    meta: { page, limit, total },
+    meta: {
+      total,
+      page,
+      limit,
+    },
     data: result,
   };
 };

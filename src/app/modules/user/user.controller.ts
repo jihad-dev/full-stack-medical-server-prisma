@@ -5,61 +5,42 @@ import { userFilterableFields } from "./user.constant";
 import pick from "../../../Shared/pick";
 import { sendResponse } from "../../../Shared/sendResponse";
 import { IAuthUser } from "./../../interfaces/common";
+import httpStatus from "http-status";
 
-const createAdmin = async (req: Request, res: Response, next: unknown) => {
-  try {
-    const result = await userServices.createAdmin(req);
-    res.status(201).json({
-      success: true,
-      message: "Admin Created Successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error?.name || "Failed to create user",
-      error,
-    });
-  }
-};
-const createDoctor = async (req: Request, res: Response, next: unknown) => {
-  try {
-    const result = await userServices.createDoctor(req);
-    res.status(201).json({
-      success: true,
-      message: "Doctor Created Successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error?.name || "Failed to create Doctor",
-      error,
-    });
-  }
-};
-const createPatient = async (req: Request, res: Response, next: unknown) => {
-  try {
-    const result = await userServices.createPatient(req);
-    res.status(201).json({
-      success: true,
-      message: "Patient Created Successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error?.name || "Failed to create Doctor",
-      error,
-    });
-  }
-};
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.createAdmin(req);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Admin Created Successfully",
+    data: result,
+  });
+});
+const createDoctor = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.createDoctor(req);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor Created Successfully",
+    data: result,
+  });
+});
+const createPatient = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.createPatient(req);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Patient Created Successfully",
+    data: result,
+  });
+});
+
 const getAllUser = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, userFilterableFields);
   const options = pick(req.query, ["page", "limit", "sortOrder", "sortBy"]);
   const result = await userServices.getAllUserFromDB(filters, options);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
     message: "user retrieved successfully",
     meta: result.meta,
@@ -70,7 +51,7 @@ const changeProfileStatus = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await userServices.changeProfileStatus(id, req.body);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
     message: "Profile Status Changed successfully",
     data: result,
@@ -81,12 +62,12 @@ const changeProfileStatus = catchAsync(async (req: Request, res: Response) => {
 
 const getMyProfile = catchAsync(
   async (req: Request & { user?: IAuthUser | null }, res: Response) => {
-    const user = req.user as IAuthUser; 
+    const user = req.user as IAuthUser;
 
     const result = await userServices.getMyProfile(user);
 
     sendResponse(res, {
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       success: true,
       message: "User profile retrieved successfully",
       data: result,
@@ -98,7 +79,7 @@ const updateMyProfile = catchAsync(
     const user = req.user; // assuming userId is added to req.user by auth middleware
     const result = await userServices.updateMyProfile(user as IAuthUser, req);
     sendResponse(res, {
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       success: true,
       message: "User profile update successfully",
       data: result,

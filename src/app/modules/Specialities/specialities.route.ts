@@ -17,7 +17,6 @@ router.post(
 );
 router.get(
   "/",
-  auth(userRole.SUPER_ADMIN, userRole.ADMIN, userRole.DOCTOR),
   specialitiesController.getAllSpecialities
 );
 router.delete(

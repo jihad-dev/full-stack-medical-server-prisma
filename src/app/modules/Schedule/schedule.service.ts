@@ -1,11 +1,17 @@
-import { addHours, addMinutes, format, parse } from "date-fns";
+
 import { prisma } from "../../../Shared/prisma";
 import { SchedulePayload } from "./schedule.interface";
 import { Prisma, Schedule } from "../../../generated/prisma";
 import { paginationHelper } from "../../../helpers/pagination";
 import { IAuthUser } from "../../interfaces/common";
 import { IScheduleFilterRequest, IScheduleOptions } from "./schedule.constant";
+import { addMinutes, addHours, format, } from "date-fns";
 
+
+const convertDateTime = async (date: Date) => {
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() + offset);
+}
 const getAllSchedule = async (
   params: IScheduleFilterRequest,
   options: IScheduleOptions,
@@ -94,61 +100,74 @@ const getAllSchedule = async (
   };
 };
 
-const createSchedule = async (
-  payload: SchedulePayload
-): Promise<Schedule[]> => {
-  const { startDate, endDate, startTime, endTime } = payload;
-  let currentDate = new Date(startDate);
-  const lastDate = new Date(endDate);
-  const intervalTime = 30;
-  const schedules = [];
+const createSchedule = async (payload: SchedulePayload): Promise<Schedule[]> => {
+    const { startDate, endDate, startTime, endTime } = payload;
 
-  while (currentDate <= lastDate) {
-    let startDateTime = addMinutes(
-      addHours(
-        new Date(format(currentDate, "yyyy-MM-dd")),
-        Number(startTime.split(":")[0])
-      ),
-      Number(startTime.split(":")[1])
-    );
-    const endDateTime = addMinutes(
-      addHours(
-        new Date(format(currentDate, "yyyy-MM-dd")),
-        Number(endTime.split(":")[0])
-      ),
-      Number(endTime.split(":")[1])
-    );
+    const interverlTime = 30;
 
-    while (startDateTime < endDateTime) {
-      const scheduleData = {
-        startDateTime: new Date(startDateTime), // কপি
-        endDateTime: addMinutes(new Date(startDateTime), intervalTime), // + 30
-      };
-      // insert schedule Data inTo DB
+    const schedules = [];
 
-      const existingSchedule = await prisma.schedule.findFirst({
-        where: {
-          startDateTime: scheduleData.startDateTime,
-          endDateTime: scheduleData.endDateTime,
-        },
-      });
-      if (!existingSchedule) {
-        const result = await prisma.schedule.create({
-          data: scheduleData,
-        });
-        schedules.push(result);
-      }
+    const currentDate = new Date(startDate); // start date
+    const lastDate = new Date(endDate) // end date
 
-      startDateTime = addMinutes(startDateTime, intervalTime);
+    while (currentDate <= lastDate) {
+        // 09:30  ---> ['09', '30']
+        const startDateTime = new Date(
+            addMinutes(
+                addHours(
+                    `${format(currentDate, 'yyyy-MM-dd')}`,
+                    Number(startTime.split(':')[0])
+                ),
+                Number(startTime.split(':')[1])
+            )
+        );
+
+        const endDateTime = new Date(
+            addMinutes(
+                addHours(
+                    `${format(currentDate, 'yyyy-MM-dd')}`,
+                    Number(endTime.split(':')[0])
+                ),
+                Number(endTime.split(':')[1])
+            )
+        );
+
+        while (startDateTime < endDateTime) {
+         
+            const s = await convertDateTime(startDateTime);
+            const e = await convertDateTime(addMinutes(startDateTime, interverlTime))
+
+            const scheduleData = {
+                startDateTime: s,
+                endDateTime: e
+            }
+
+            const existingSchedule = await prisma.schedule.findFirst({
+                where: {
+                    startDateTime: scheduleData.startDateTime,
+                    endDateTime: scheduleData.endDateTime
+                }
+            });
+
+            if (!existingSchedule) {
+                const result = await prisma.schedule.create({
+                    data: scheduleData
+                });
+                schedules.push(result);
+            }
+
+            startDateTime.setMinutes(startDateTime.getMinutes() + interverlTime);
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    currentDate.setDate(currentDate.getDate() + 1); // পরের দিনে যাওয়া
-  }
-
-  return schedules;
+    return schedules;
 };
 
-const getSingleschedule = async (id: string): Promise<Schedule | null>  => {
+
+
+const getSingleschedule = async (id: string): Promise<Schedule | null> => {
   const result = await prisma.schedule.findUniqueOrThrow({
     where: {
       id,
@@ -158,18 +177,18 @@ const getSingleschedule = async (id: string): Promise<Schedule | null>  => {
 };
 
 const deleteSchedule = async (id: string): Promise<Schedule> => {
-    const result = await prisma.schedule.delete({
-        where: {
-            id,
-        },
-    });
-    console.log({result});
-    
-    return result;
+  const result = await prisma.schedule.delete({
+    where: {
+      id,
+    },
+  });
+  console.log({ result });
+
+  return result;
 };
 export const scheduleServices = {
   createSchedule,
   getAllSchedule,
   getSingleschedule,
-  deleteSchedule
+  deleteSchedule,
 };

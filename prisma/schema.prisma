@@ -53,6 +53,7 @@ model Doctor {
   currentWorkingPlace String
   designation         String
   isDeleted           Boolean              @default(false)
+  averageRating       Float                @default(0.0)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   user                User                 @relation(fields: [email], references: [email])
@@ -93,14 +94,14 @@ model Appointment {
   doctorSchedule DoctorSchedule?
   payment        Payment?
   prescription   Prescription?
-  review Review?
+  review         Review?
 }
 
 model Payment {
   id                 String        @id @default(uuid())
   appointmentId      String        @unique
   amount             Float
-  transactionId      String @unique
+  transactionId      String        @unique
   status             PaymentStatus @default(UNPAID)
   paymentGatewayData Json?
   createdAt          DateTime      @default(now())

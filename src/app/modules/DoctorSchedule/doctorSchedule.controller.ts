@@ -5,7 +5,7 @@ import { doctorScheduleServices } from "./doctorSchedule.services";
 import { IAuthUser } from "../../interfaces/common";
 import pick from "../../../Shared/pick";
 import { scheduleFilterableFields } from "./doctorSchedule.constant";
-
+import httpStatus from 'http-status'
 const createDoctorSchedule = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
     const user = req?.user as IAuthUser;
@@ -14,7 +14,7 @@ const createDoctorSchedule = catchAsync(
       req.body
     );
     sendResponse(res, {
-      statusCode: 200,
+   statusCode:httpStatus.OK,
       success: true,
       message: "Doctor schedule Create successfully",
       data: result,
@@ -26,7 +26,7 @@ const getAllDoctorSchedule = catchAsync(async (req: Request, res: Response) => {
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
   const result = await doctorScheduleServices.getAllDoctorSchedule(filters, options);
   sendResponse(res, {
-    statusCode: 200,
+ statusCode:httpStatus.OK,
     success: true,
     message: "Doctor Schedule retrieval successfully",
     meta: result.meta,
@@ -44,7 +44,7 @@ const getMySchedule = catchAsync(
       user
     );
     sendResponse(res, {
-      statusCode: 200,
+   statusCode:httpStatus.OK,
       success: true,
       message: "My Schedule retrieved successfully",
       data: result,
@@ -57,7 +57,7 @@ const deleteDoctorSchedule = catchAsync(
     const user = req?.user as IAuthUser;
     const result = await doctorScheduleServices.deleteDoctorSchedule(id, user);
     sendResponse(res, {
-      statusCode: 200,
+   statusCode:httpStatus.OK,
       success: true,
       message: "My Schedule retrieved successfully",
       data: result,

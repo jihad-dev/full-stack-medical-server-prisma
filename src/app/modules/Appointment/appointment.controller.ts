@@ -4,13 +4,13 @@ import { catchAsync } from "../../middlewares/catchAsync";
 import { IAuthUser } from "../../interfaces/common";
 import { appointmentServices } from "./appointment.services";
 import pick from "../../../Shared/pick";
-
+import httpStatus from "http-status";
 const createAppointment = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
     const user = req?.user as IAuthUser;
     const result = await appointmentServices.createAppointment(user, req.body);
     sendResponse(res, {
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       success: true,
       message: "Appointment Create successfully",
       data: result,
@@ -29,7 +29,7 @@ const getMyAppointment = catchAsync(
       options
     );
     sendResponse(res, {
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       success: true,
       message: "My Appointment retrieved successfully",
       data: result,
@@ -45,7 +45,7 @@ const getAllAppointment = catchAsync(
       options
     );
     sendResponse(res, {
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       success: true,
       message: "All Appointment retrieved successfully",
       data: result,
@@ -53,22 +53,40 @@ const getAllAppointment = catchAsync(
   }
 );
 
-const changeAppointmentStatus = catchAsync(async (req: Request & { user?: IAuthUser }, res: Response) => {
+const changeAppointmentStatus = catchAsync(
+  async (req: Request & { user?: IAuthUser }, res: Response) => {
     const { id } = req.params;
     const { status } = req.body;
     const user = req.user;
-    const result = await appointmentServices.changeAppointmentStatus(id, status, user as IAuthUser);
+    const result = await appointmentServices.changeAppointmentStatus(
+      id,
+      status,
+      user as IAuthUser
+    );
     sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: 'Appointment status changed successfully',
-        data: result
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Appointment status changed successfully",
+      data: result,
     });
-});
+  }
+);
+// const getAppointmentsByMonth = catchAsync(
+//   async (req: Request, res: Response) => {
+//     const result = await appointmentServices.getAppointmentsByMonth();
+//     sendResponse(res, {
+//       statusCode: httpStatus.OK,
+//       success: true,
+//       message: "Appointment get By Month",
+//       data: result,
+//     });
+//   }
+// );
 
 export const appointmentController = {
   createAppointment,
   getMyAppointment,
   changeAppointmentStatus,
   getAllAppointment,
+  
 };

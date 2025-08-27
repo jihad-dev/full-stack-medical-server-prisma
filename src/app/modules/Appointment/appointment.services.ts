@@ -236,47 +236,49 @@ const changeAppointmentStatus = async (
     },
   });
 
+  // TODO4️⃣ যদি status PAID হয় → email পাঠাও
+  
   return result;
 };
 
 const cancelUnpaidAppointments = async () => {
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
 
-  const cancelAppointment = await prisma.appointment.findMany({
+  const unPaidAppointments = await prisma.appointment.findMany({
     where: {
       createdAt: {
-
         lte: thirtyMinAgo,
       },
       paymentStatus: PaymentStatus.UNPAID,
     },
   });
-  const unpaidAppointments = cancelAppointment.map(
+
+  const appointmentIdsToCancel = unPaidAppointments.map(
     (appointment) => appointment.id
   );
+
   await prisma.$transaction(async (tx) => {
     await tx.payment.deleteMany({
       where: {
         appointmentId: {
-          in: unpaidAppointments,
+          in: appointmentIdsToCancel,
         },
       },
     });
 
-    // delete unpaid appointments
     await tx.appointment.deleteMany({
       where: {
         id: {
-          in: unpaidAppointments,
+          in: appointmentIdsToCancel,
         },
       },
     });
-    // update doctorSchedule Status : False
-    for (const unpaidAppointment of cancelAppointment) {
+
+    for (const upPaidAppointment of unPaidAppointments) {
       await tx.doctorSchedule.updateMany({
         where: {
-          doctorId: unpaidAppointment.doctorId,
-          scheduleId: unpaidAppointment.scheduleId,
+          doctorId: upPaidAppointment.doctorId,
+          scheduleId: upPaidAppointment.scheduleId,
         },
         data: {
           isBooked: false,
@@ -284,7 +286,8 @@ const cancelUnpaidAppointments = async () => {
       });
     }
   });
-  
+
+  //console.log("updated")
 };
 
 export const appointmentServices = {

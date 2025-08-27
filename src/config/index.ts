@@ -3,10 +3,12 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export default {
-  env: process.env.NODE_ENV,
+  node_env: process.env.NODE_ENV,
   port: process.env.PORT,
-  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
-  jwt_secret: process.env.JWT_SECRET,
+  super_admin_email: process.env.SUPER_ADMIN_EMAIL,
+  super_admin_password: process.env.SUPER_ADMIN_PASSWORD,
+  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET as string,
+  jwt_secret: process.env.JWT_SECRET as string,
   reset_password_token: process.env.RESET_PASSWORD_TOKEN,
   reset_password_expires_in: process.env.RESET_PASSWORD_EXPIRES_IN,
   reset_password_link: process.env.RESET_PASSWORD_LINK,

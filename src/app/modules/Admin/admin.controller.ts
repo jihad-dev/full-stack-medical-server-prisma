@@ -4,13 +4,13 @@ import { catchAsync } from "../../middlewares/catchAsync";
 import { adminFilterableFields } from "./admin.constant";
 import { adminServices } from "./admin.service";
 import { NextFunction, Request, Response } from 'express';
-
+import httpStatus from "http-status";
 const getAllAdmin = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, adminFilterableFields);
     const options = pick(req.query, ['page', 'limit', 'sortOrder', 'sortBy']);
     const result = await adminServices.getAllAdminFromDB(filters, options);
     sendResponse(res, {
-        statusCode: 200,
+     statusCode:httpStatus.OK,
         success: true,
         message: "Admins retrieved successfully",
         data: result
@@ -29,7 +29,7 @@ const getSingleDataById = catchAsync(async (req: Request, res: Response): Promis
         });
     }
     sendResponse(res, {
-        statusCode: 200,
+     statusCode:httpStatus.OK,
         success: true,
         message: "single Admin retrieved successfully",
         data: result,
@@ -41,7 +41,7 @@ const updateIntoDB = catchAsync(async (req: Request, res: Response): Promise<voi
     const data = req.body;
     const result = await adminServices.updateIntoDB(id, data);
     sendResponse(res, {
-        statusCode: 200,
+     statusCode:httpStatus.OK,
         success: true,
         message: "Admins data update  successfully",
         data: result,
@@ -53,7 +53,7 @@ const deleteIntoDB = catchAsync(async (req: Request, res: Response): Promise<voi
     const id = req.params.id;
     const result = await adminServices.deleteIntoDB(id);
     sendResponse(res, {
-        statusCode: 200,
+     statusCode:httpStatus.OK,
         success: true,
         message: "Admins Delete successfully",
         data: result,
@@ -73,7 +73,7 @@ const softDeleteIntoDB = async (req: Request, res: Response, next: NextFunction)
 
         const result = await adminServices.softDeleteIntoDB(id);
         sendResponse(res, {
-            statusCode: 200,
+         statusCode:httpStatus.OK,
             success: true,
             message: 'Your Account deleted successfully',
             data: result,

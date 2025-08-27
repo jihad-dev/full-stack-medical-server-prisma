@@ -3,4 +3,5 @@ export type SchedulePayload = {
   endDate: string;    // "YYYY-MM-DD" format
   startTime: string;  // "HH:mm" format
   endTime: string;    // "HH:mm" format
+  // 🔹 নতুন যোগ হলো
 };

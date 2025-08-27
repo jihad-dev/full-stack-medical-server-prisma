@@ -5,9 +5,10 @@ import { userStatus } from "../../../generated/prisma";
 import config from "../../../config";
 import { Secret } from "jsonwebtoken";
 import emailSender from "./emailSender";
-
+import AppError from "../../errors/AppError";
+import httpStatus from 'http-status'
 const loginUser = async (payload: { email: string; password: string }) => {
-  const userData = await prisma.user.findUniqueOrThrow({
+  const userData = await prisma.user.findFirstOrThrow({
     where: {
       email: payload?.email,
       status: userStatus.ACTIVE,
@@ -15,7 +16,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
   });
 
   const checkingPassword = await bcrypt.compare(
-    payload?.password,
+    payload.password,
     userData.password
   );
   if (!checkingPassword) {
@@ -26,14 +27,14 @@ const loginUser = async (payload: { email: string; password: string }) => {
   const accessToken = generateToken(
     { email: userData.email, role: userData.role },
     config.jwt_secret as string,
-    "7d"
+    "2d"
   );
- 
+
   // create a jwt refresh token
   const refreshToken = generateToken(
-    { email: userData.email, role: userData.role},
+    { email: userData.email, role: userData.role },
     config.jwt_refresh_secret as string,
-    "30d"
+    "7d"
   );
   return {
     accessToken,
@@ -42,43 +43,33 @@ const loginUser = async (payload: { email: string; password: string }) => {
   };
 };
 
-const refreshToken = async (token: string) => {
+const refreshToken = async (refreshToken: string) => {
+  let decodedData;
   try {
-    // ১. টোকেন verify করো
-    const decoded = verifyToken(
-      token,
-      process.env.JWT_REFRESH_SECRET as string
-    );
-
-    if (!decoded?.email) {
-      throw new Error("Invalid token");
-    }
-    // ২. ডাটাবেজ থেকে ইউজার বের করো
-    const user = await prisma.user.findUniqueOrThrow({
-      where: {
-        email: decoded.email,
-        status: userStatus.ACTIVE,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-    // ৩. নতুন accessToken জেনারেট করো
-    const newAccessToken = generateToken(
-      { email: user.email, role: user.role},
-      config.jwt_secret as string,
-      "8h"
-    );
-
-    return {
-      accessToken: newAccessToken,
-      needPasswordChange: user?.needPasswordChange,
-    };
-  } catch (error) {
-    throw new Error("You Are Not Authorized!!");
+    decodedData = verifyToken(refreshToken, config.jwt_refresh_secret as Secret);
+  } catch (err) {
+   throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized! refresh token");
   }
+
+  const userData = await prisma.user.findFirstOrThrow({
+    where: {
+      email: decodedData.email,
+      status: userStatus.ACTIVE,
+    },
+  });
+
+  const accessToken = generateToken(
+    { email: userData.email, role: userData.role },
+    config.jwt_secret as string,
+    "7d" as string
+  );
+
+  return {
+    accessToken,
+    needPasswordChange: userData.needPasswordChange,
+  };
 };
+
 const changePassword = async (user: any, payload: any) => {
   const userData = await prisma.user.findUniqueOrThrow({
     where: {

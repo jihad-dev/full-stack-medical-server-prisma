@@ -27,4 +27,5 @@ router.patch(
     appointmentController.changeAppointmentStatus
 );
 
+
 export const appointmentRoutes = router;

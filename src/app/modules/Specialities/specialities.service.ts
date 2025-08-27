@@ -2,6 +2,7 @@ import { Request } from "express";
 import { IUploadFile } from "../../interfaces/file";
 import { fileUploader } from "../../../helpers/fileUploader";
 import { prisma } from "../../../Shared/prisma";
+import { paginationHelper } from "../../../helpers/pagination";
 
 const insertIntoDB = async (req: Request) => {
   const file = req?.file as IUploadFile;
@@ -16,9 +17,42 @@ const insertIntoDB = async (req: Request) => {
   return result;
 };
 
-const getAllSpecilities = async () => {
-  const result = await prisma.specialities.findMany();
-  return result;
+const getAllSpecilities = async (params: any, options: any) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+  const { title } = params;
+
+  const andConditions: any[] = [];
+
+  if (title) {
+    andConditions.push({
+      title: {
+        contains: title,
+        mode: "insensitive",
+      },
+    });
+  }
+
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.specialities.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+  
+  });
+
+  const total = await prisma.specialities.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const deleteSpecilities = async (id: string) => {
